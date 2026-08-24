@@ -82,13 +82,13 @@ export default async function CourseLandingPage({
           <div className="space-y-2">
             <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">Database Offline</h2>
             <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
-              Lernexa LMS could not connect to your MySQL database server at <code>localhost:3306</code>.
+              Lernexa LMS could not connect to your Supabase PostgreSQL database.
             </p>
           </div>
           <div className="text-left bg-slate-50 dark:bg-slate-950 p-4 rounded-xl text-xs font-mono space-y-3 text-slate-700 dark:text-slate-400 border border-slate-100 dark:border-slate-900">
             <div>
-              <p className="font-semibold text-slate-500 mb-1">1. Start MySQL database:</p>
-              <code className="bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded block select-all">docker-compose up -d</code>
+              <p className="font-semibold text-slate-500 mb-1">1. Configure DATABASE_URL in .env:</p>
+              <code className="bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded block select-all">{"DATABASE_URL=\"postgresql://...\""}</code>
             </div>
             <div>
               <p className="font-semibold text-slate-500 mb-1">2. Push Prisma schema:</p>

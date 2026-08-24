@@ -1,5 +1,5 @@
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -187,7 +187,7 @@ model Lesson {
   title         String           @db.VarChar(255)
   description   String?          @db.Text
   type          LessonType       @default(TEXT)
-  content       String?          @db.LongText
+  content       String?          @db.Text
   videoUrl      String?          @db.VarChar(255)
   duration      Float            @default(0) // minutes
   isFreePreview Boolean          @default(false)
@@ -856,7 +856,7 @@ model BlogPost {
   author      User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
   title       String         @db.VarChar(255)
   slug        String         @unique @db.VarChar(255)
-  content     String         @db.LongText
+  content     String         @db.Text
   thumbnail   String?        @db.VarChar(255)
   status      BlogPostStatus @default(DRAFT)
   publishedAt DateTime?
@@ -870,7 +870,7 @@ model CMSPage {
   id          String   @id @default(uuid())
   title       String   @db.VarChar(255)
   slug        String   @unique @db.VarChar(255)
-  content     String   @db.LongText
+  content     String   @db.Text
   layout      String   @default("default") @db.VarChar(50)
   isPublished Boolean  @default(false)
   createdAt   DateTime @default(now())

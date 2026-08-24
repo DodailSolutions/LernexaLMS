@@ -35,8 +35,8 @@ export async function GET(req: Request) {
         level,
         OR: search
           ? [
-              { title: { contains: search } },
-              { subtitle: { contains: search } },
+              { title: { contains: search, mode: "insensitive" } },
+              { subtitle: { contains: search, mode: "insensitive" } },
             ]
           : undefined,
       },
@@ -60,8 +60,8 @@ export async function GET(req: Request) {
         level,
         OR: search
           ? [
-              { title: { contains: search } },
-              { subtitle: { contains: search } },
+              { title: { contains: search, mode: "insensitive" } },
+              { subtitle: { contains: search, mode: "insensitive" } },
             ]
           : undefined,
       },
