@@ -4,6 +4,8 @@ import { getSessionUser } from "@/features/auth/server";
 import { db } from "@/lib/db";
 import { BookOpen, Clock, Users, PlayCircle, Lock, GraduationCap } from "lucide-react";
 
+import { Prisma } from "@prisma/client";
+
 export const dynamic = "force-dynamic";
 
 export default async function CourseLandingPage({
@@ -14,42 +16,96 @@ export default async function CourseLandingPage({
   const { slug } = await params;
   const user = await getSessionUser();
 
-  const course = await db.course.findUnique({
-    where: { slug },
+  let course: Prisma.CourseGetPayload<{
     include: {
       instructor: {
-        select: { name: true, email: true },
-      },
+        select: { name: true, email: true };
+      };
       category: {
-        select: { name: true },
-      },
+        select: { name: true };
+      };
       sections: {
-        orderBy: { sortOrder: "asc" },
         include: {
-          lessons: {
-            orderBy: { sortOrder: "asc" },
+          lessons: true;
+        };
+      };
+    };
+  }> | null = null;
+  let isEnrolled = false;
+  let dbError = null;
+
+  try {
+    course = await db.course.findUnique({
+      where: { slug },
+      include: {
+        instructor: {
+          select: { name: true, email: true },
+        },
+        category: {
+          select: { name: true },
+        },
+        sections: {
+          orderBy: { sortOrder: "asc" },
+          include: {
+            lessons: {
+              orderBy: { sortOrder: "asc" },
+            },
           },
         },
       },
-    },
-  });
+    });
+
+    if (course && user) {
+      const enrollment = await db.enrollment.findUnique({
+        where: {
+          studentId_courseId: {
+            studentId: user.id,
+            courseId: course.id,
+          },
+        },
+      });
+      isEnrolled = !!enrollment;
+    }
+  } catch (err) {
+    dbError = err instanceof Error ? err.message : String(err);
+  }
+
+  if (dbError) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-2xl shadow-sm max-w-md w-full text-center space-y-6">
+          <div className="inline-flex bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 p-3 rounded-full">
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">Database Offline</h2>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Lernexa LMS could not connect to your MySQL database server at <code>localhost:3306</code>.
+            </p>
+          </div>
+          <div className="text-left bg-slate-50 dark:bg-slate-950 p-4 rounded-xl text-xs font-mono space-y-3 text-slate-700 dark:text-slate-400 border border-slate-100 dark:border-slate-900">
+            <div>
+              <p className="font-semibold text-slate-500 mb-1">1. Start MySQL database:</p>
+              <code className="bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded block select-all">docker-compose up -d</code>
+            </div>
+            <div>
+              <p className="font-semibold text-slate-500 mb-1">2. Push Prisma schema:</p>
+              <code className="bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded block select-all">npx prisma db push</code>
+            </div>
+            <div>
+              <p className="font-semibold text-slate-500 mb-1">3. Seed database tables:</p>
+              <code className="bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded block select-all">npx prisma db seed</code>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (!course) {
     redirect("/");
-  }
-
-  // Check if student is already enrolled
-  let isEnrolled = false;
-  if (user) {
-    const enrollment = await db.enrollment.findUnique({
-      where: {
-        studentId_courseId: {
-          studentId: user.id,
-          courseId: course.id,
-        },
-      },
-    });
-    isEnrolled = !!enrollment;
   }
 
   // Server action to enroll student (for Phase 2 development / free access)

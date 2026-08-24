@@ -13,37 +13,77 @@ export default async function CoursesCatalogPage({
   const { search = "", categoryId = "", level = "" } = await searchParams;
   const user = await getSessionUser();
 
-  // Fetch all categories for filter sidebar
-  const categories = await db.category.findMany({
-    orderBy: { name: "asc" },
-  });
+  let categories: any[] = [];
+  let courses: any[] = [];
+  let dbError = null;
 
-  // Query published courses based on search params
-  const courses = await db.course.findMany({
-    where: {
-      status: "PUBLISHED",
-      categoryId: categoryId || undefined,
-      level: level || undefined,
-      OR: search
-        ? [
-            { title: { contains: search } },
-            { subtitle: { contains: search } },
-          ]
-        : undefined,
-    },
-    include: {
-      instructor: {
-        select: { name: true },
+  try {
+    categories = await db.category.findMany({
+      orderBy: { name: "asc" },
+    });
+
+    courses = await db.course.findMany({
+      where: {
+        status: "PUBLISHED",
+        categoryId: categoryId || undefined,
+        level: level || undefined,
+        OR: search
+          ? [
+              { title: { contains: search } },
+              { subtitle: { contains: search } },
+            ]
+          : undefined,
       },
-      category: {
-        select: { name: true },
+      include: {
+        instructor: {
+          select: { name: true },
+        },
+        category: {
+          select: { name: true },
+        },
+        enrollments: {
+          select: { id: true },
+        },
       },
-      enrollments: {
-        select: { id: true },
-      },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      orderBy: { createdAt: "desc" },
+    });
+  } catch (err) {
+    dbError = err instanceof Error ? err.message : String(err);
+  }
+
+  if (dbError) {
+    return (
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex items-center justify-center p-6">
+        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-8 rounded-2xl shadow-sm max-w-md w-full text-center space-y-6">
+          <div className="inline-flex bg-rose-50 dark:bg-rose-950/30 text-rose-600 dark:text-rose-400 p-3 rounded-full">
+            <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-xl font-extrabold text-slate-900 dark:text-white">Database Offline</h2>
+            <p className="text-xs text-slate-600 dark:text-slate-400 leading-relaxed">
+              Lernexa LMS could not connect to your MySQL database server at <code>localhost:3306</code>.
+            </p>
+          </div>
+          <div className="text-left bg-slate-50 dark:bg-slate-950 p-4 rounded-xl text-xs font-mono space-y-3 text-slate-700 dark:text-slate-400 border border-slate-100 dark:border-slate-900">
+            <div>
+              <p className="font-semibold text-slate-500 mb-1">1. Start MySQL database:</p>
+              <code className="bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded block select-all">docker-compose up -d</code>
+            </div>
+            <div>
+              <p className="font-semibold text-slate-500 mb-1">2. Push Prisma schema:</p>
+              <code className="bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded block select-all">npx prisma db push</code>
+            </div>
+            <div>
+              <p className="font-semibold text-slate-500 mb-1">3. Seed database tables:</p>
+              <code className="bg-slate-200 dark:bg-slate-800 px-2 py-1 rounded block select-all">npx prisma db seed</code>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#fafbff] dark:bg-[#0b0f19] flex flex-col">
